@@ -1,11 +1,13 @@
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt"); // For secure password hashing
+const bcrypt = require("bcrypt");
 
-// User Schema
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String },
-    lastName: { type: String },
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+    },
     email: {
       type: String,
       required: true,
@@ -13,30 +15,62 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
-    password: { type: String, required: true, minlength: 8 }, // Enforce minimum password length
-    role: { type: String, enum: ["admin", "seller", "bidder"], required: true },
-    contactNumber: { type: String }, // Consider validation for phone number format
+    password: {
+      type: String,
+      required: true,
+      minlength: 8,
+    },
+    role: {
+      type: String,
+      enum: ["admin", "seller", "buyer"],
+      required: true,
+    },
+    contactNumber: {
+      type: String,
+    },
     address: {
       houseNumber: { type: String },
       streetNumber: { type: String },
       streetName: { type: String },
       city: { type: String },
     },
-    profile_image: {
+    profileImage: {
       type: String,
       default: null,
     },
-    otp: { 
-      value: { type: String, default: null }, // Store OTP value
-      time: { type: Date, default: null },   // Store the timestamp when OTP was generated
+
+    // Seller-Specific Fields
+    personalInfo: {
+      firstName: { type: String, trim: true },
+      lastName: { type: String, trim: true },
+      phone: { type: String, trim: true },
+    },
+    businessInfo: {
+      businessName: { type: String, trim: true },
+      taxId: { type: String, trim: true },
+      address: { type: String },
+      bio: { type: String, maxlength: 500 },
+    },
+    verificationStatus: {
+      documentVerified: { type: Boolean, default: false },
+      addressVerified: { type: Boolean, default: false },
+      paymentVerified: { type: Boolean, default: false },
+    },
+
+    // OTP Fields
+    otp: {
+      value: { type: String, default: null },
+      time: { type: Date, default: null },
     },
   },
-  { timestamps: true } // Automatically adds createdAt and updatedAt fields
+  {
+    timestamps: true, // Automatically adds createdAt and updatedAt fields
+  }
 );
 
-// Hash password before saving the user
+// Middleware: Hash password before saving the user
 userSchema.pre("save", async function (next) {
-  const user = this; // Use 'this' to access the user schema
+  const user = this;
   if (user.isModified("password")) {
     user.password = await bcrypt.hash(user.password, 10); // Salt factor: 10
   }
@@ -44,8 +78,8 @@ userSchema.pre("save", async function (next) {
 });
 
 // Method to compare passwords
-userSchema.methods.comparePassword = async function(candidatePassword) {
-    return bcrypt.compare(candidatePassword, this.password);
+userSchema.methods.comparePassword = async function (candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
 };
 
 const User = mongoose.model("User", userSchema);

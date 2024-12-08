@@ -1,25 +1,25 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const SellerProfile = require('../models/SellerProfile');
-const User = require('../models/User');
-const authMiddleware = require('../middleware/authMiddleware');
-const multer = require('multer');
-const cloudinary = require('cloudinary').v2;
-
-// ... (previous Cloudinary and multer configuration remains the same)
+const SellerProfile = require("../models/SellerProfile");
+const User = require("../models/User");
+const authMiddleware = require("../middleware/authMiddleware");
+const multer = require("multer");
+const cloudinary = require("./cloudinary");
 
 // CREATE seller profile
-router.post('/seller-profile', authMiddleware, async (req, res) => {
+const setSellerProfile = async (req, res) => {
   try {
     // Check if user is a seller
-    if (req.user.role !== 'seller') {
-      return res.status(403).json({ message: 'Only sellers can create a profile' });
+    if (req.user.role !== "seller") {
+      return res
+        .status(403)
+        .json({ message: "Only sellers can create a profile" });
     }
 
     // Check if profile already exists
     const existingProfile = await SellerProfile.findOne({ user: req.user._id });
     if (existingProfile) {
-      return res.status(400).json({ message: 'Seller profile already exists' });
+      return res.status(400).json({ message: "Seller profile already exists" });
     }
 
     // Create new seller profile
@@ -29,9 +29,9 @@ router.post('/seller-profile', authMiddleware, async (req, res) => {
         firstName: req.body.personalInfo.firstName,
         lastName: req.body.personalInfo.lastName,
         email: req.user.email, // Use user's email
-        phone: req.body.personalInfo.phone
+        phone: req.body.personalInfo.phone,
       },
-      businessInfo: req.body.businessInfo
+      businessInfo: req.body.businessInfo,
     };
 
     const newProfile = new SellerProfile(profileData);
@@ -39,83 +39,71 @@ router.post('/seller-profile', authMiddleware, async (req, res) => {
 
     res.status(201).json(newProfile);
   } catch (error) {
-    res.status(500).json({ 
-      message: 'Error creating seller profile', 
-      error: error.message 
+    res.status(500).json({
+      message: "Error creating seller profile",
+      error: error.message,
     });
   }
-});
+};
 
 // GET seller profile (existing route, slightly modified)
-router.get('/seller-profile', authMiddleware, async (req, res) => {
+const getSellerProfile = async (req, res) => {
   try {
     // Find profile by user ID
-    const profile = await SellerProfile.findOne({ user: req.user._id })
-      .populate('user', 'name lastName email role');
+    const profile = await SellerProfile.findOne({
+      user: req.user._id,
+    }).populate("user", "name lastName email role");
 
     if (!profile) {
-      return res.status(404).json({ message: 'Profile not found' });
+      return res.status(404).json({ message: "Profile not found" });
     }
 
     res.status(200).json(profile);
   } catch (error) {
-    res.status(500).json({ 
-      message: 'Error fetching profile', 
-      error: error.message 
+    res.status(500).json({
+      message: "Error fetching profile",
+      error: error.message,
     });
   }
-});
+};
 
 // UPDATE seller profile (existing route remains mostly the same)
-router.put('/profile', authMiddleware, async (req, res) => {
+router.put("/profile", authMiddleware, async (req, res) => {
   try {
-    const { 
-      personalInfo, 
-      businessInfo, 
-      verificationStatus 
-    } = req.body;
+    const { personalInfo, businessInfo, verificationStatus } = req.body;
 
     // Find and update profile
     const profile = await SellerProfile.findOneAndUpdate(
       { user: req.user._id },
-      { 
+      {
         personalInfo: {
           ...personalInfo,
-          email: req.user.email // Ensure email cannot be changed
-        }, 
+          email: req.user.email, // Ensure email cannot be changed
+        },
         businessInfo,
         // Only allow updates to verification status by admin
-        ...(req.user.role === 'admin' && { verificationStatus }) 
+        ...(req.user.role === "admin" && { verificationStatus }),
       },
-      { 
-        new: true,  // Return updated document
-        runValidators: true  // Run model validations
+      {
+        new: true, // Return updated document
+        runValidators: true, // Run model validations
       }
     );
 
     if (!profile) {
-      return res.status(404).json({ message: 'Profile not found' });
+      return res.status(404).json({ message: "Profile not found" });
     }
 
     res.status(200).json(profile);
   } catch (error) {
-    res.status(500).json({ 
-      message: 'Error updating profile', 
-      error: error.message 
+    res.status(500).json({
+      message: "Error updating profile",
+      error: error.message,
     });
   }
 });
 
 module.exports = router;
-
-
-
-
-
-
-
-
-
 
 /*
 

@@ -32,11 +32,12 @@ app.listen(PORT, () => {
 });
 
 app.post('/register', auth.register);
-
 app.post('/login', auth.login);
 
-// Route to generate and store OTP
-app.post('/generate-otp', otpSender.generateOtp);
+app.post('/generate-otp', otpSender.generateOtp);   // Route to generate and store OTP
+app.post('/verify-otp', otpSender.verifyOtp);   // Route to verify OTP
 
-// Route to verify OTP
-app.post('/verify-otp', otpSender.verifyOtp);
+// Seller Profile
+router.post('/seller-profile', authMiddleware);
+router.get('/seller-profile', authMiddleware);
+router.put("/profile", authMiddleware);
